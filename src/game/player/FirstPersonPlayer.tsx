@@ -1,11 +1,11 @@
+import { PerspectiveCamera } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
 import {
   CapsuleCollider,
   RapierRigidBody,
   RigidBody,
 } from '@react-three/rapier'
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
-import type { PerspectiveCamera as PerspectiveCameraType } from 'three'
+import { useEffect, useMemo, useRef } from 'react'
 import { Group, Vector3 } from 'three'
 import {
   MOVE_SPEED,
@@ -24,8 +24,6 @@ const _right = new Vector3()
 export function FirstPersonPlayer() {
   const body = useRef<RapierRigidBody>(null)
   const look = useRef<Group>(null)
-  const cameraRef = useRef<PerspectiveCameraType>(null)
-  const setThree = useThree((s) => s.set)
   const { gl } = useThree()
   const { yaw, pitch, keys, pointerLocked } = useFirstPersonControls(
     PLAYER_INITIAL_YAW
@@ -33,11 +31,6 @@ export function FirstPersonPlayer() {
 
   const spawn = useMemo(() => playerSpawnPosition(), [])
   const cameraLocalY = useMemo(() => playerCameraLocalY(), [])
-
-  useLayoutEffect(() => {
-    const cam = cameraRef.current
-    if (cam) setThree({ camera: cam })
-  }, [setThree])
 
   useEffect(() => {
     const canvas = gl.domElement
@@ -110,7 +103,7 @@ export function FirstPersonPlayer() {
 
       <group position={[0, cameraLocalY, 0]}>
         <group ref={look}>
-          <perspectiveCamera ref={cameraRef} fov={75} near={0.06} far={200} />
+          <PerspectiveCamera makeDefault fov={75} near={0.06} far={200} />
         </group>
       </group>
     </RigidBody>
