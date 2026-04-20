@@ -1,6 +1,7 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import {
   CapsuleCollider,
+  Physics,
   RapierRigidBody,
   RigidBody,
 } from '@react-three/rapier'
@@ -92,6 +93,7 @@ export function FirstPersonPlayer() {
   const cylLen = PLAYER_CAPSULE_HALF_HEIGHT * 2
 
   return (
+    <Physics>
     <RigidBody
       ref={body}
       position={spawn}
@@ -111,8 +113,9 @@ export function FirstPersonPlayer() {
       <group position={[0, cameraLocalY, 0]}>
         <group ref={look}>
           <perspectiveCamera ref={cameraRef} fov={75} near={0.06} far={200} />
+          </group>
         </group>
-      </group>
-    </RigidBody>
+      </RigidBody>
+    </Physics>
   )
 }

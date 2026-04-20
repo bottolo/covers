@@ -1,4 +1,4 @@
-import { CuboidCollider, RigidBody } from '@react-three/rapier'
+import { CuboidCollider, Physics, RigidBody } from '@react-three/rapier'
 import {
   CORRIDOR_LENGTH,
   CORRIDOR_INNER_WIDTH,
@@ -23,7 +23,7 @@ export function Corridor() {
   const lenHalf = CORRIDOR_LENGTH / 2
 
   return (
-    <>
+    <Physics>
       {/* Floor */}
       <RigidBody type="fixed" colliders={false}>
         <mesh position={[0, -hyFloor, 0]} receiveShadow>
@@ -80,6 +80,6 @@ export function Corridor() {
           position={[0, hyWall, lenHalf + t / 2]}
         />
       </RigidBody>
-    </>
+    </Physics>
   )
 }
