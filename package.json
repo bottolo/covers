@@ -6,11 +6,12 @@
   "scripts": {
     "dev": "vite --host",
     "build": "tsc -b && vite build",
-    "preview": "vite preview --host",
+    "preview": "bun run build && wrangler dev",
     "lint": "eslint .",
     "docker:up": "docker compose up -d --build",
     "docker:down": "docker compose down",
-    "docker:restart": "docker compose down && docker compose up --build"
+    "docker:restart": "docker compose down && docker compose up --build",
+    "deploy": "bun run build && wrangler deploy"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
@@ -23,6 +24,7 @@
     "three": "^0.184.0"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.33.0",
     "@eslint/js": "^9.39.4",
     "@tailwindcss/vite": "^4.2.2",
     "@types/node": "^24.12.2",
@@ -37,6 +39,7 @@
     "tailwindcss": "^4.2.2",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.58.2",
-    "vite": "^8.0.9"
+    "vite": "^8.0.9",
+    "wrangler": "^4.84.0"
   }
 }

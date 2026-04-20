@@ -71,7 +71,7 @@ export function Corridor() {
 
       {/* Front wall (+Z) */}
       <RigidBody type="fixed" colliders={false}>
-        <mesh position={[0, hyWall, lenHalf + t / 2]} castShadow receiveShadow>
+        <mesh position={[0, hyWall, lenHalf + t / 2]} castShadow receiveShadow frustumCulled={false}>
           <boxGeometry args={[hx * 2, WALL_HEIGHT, t]} />
           <meshStandardMaterial color={wallColor} />
         </mesh>
