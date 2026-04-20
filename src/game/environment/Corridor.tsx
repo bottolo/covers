@@ -1,4 +1,4 @@
-import { CuboidCollider, Physics, RigidBody } from '@react-three/rapier'
+import { CuboidCollider, RigidBody } from '@react-three/rapier'
 import {
   CORRIDOR_LENGTH,
   CORRIDOR_INNER_WIDTH,
