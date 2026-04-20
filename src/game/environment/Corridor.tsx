@@ -23,7 +23,7 @@ export function Corridor() {
   const lenHalf = CORRIDOR_LENGTH / 2
 
   return (
-    <Physics>
+    <>
       {/* Floor */}
       <RigidBody type="fixed" colliders={false}>
         <mesh position={[0, -hyFloor, 0]} receiveShadow>
@@ -71,7 +71,7 @@ export function Corridor() {
 
       {/* Front wall (+Z) */}
       <RigidBody type="fixed" colliders={false}>
-        <mesh position={[0, hyWall, lenHalf + t / 2]} castShadow receiveShadow frustumCulled={false}>
+        <mesh position={[0, hyWall, lenHalf + t / 2]} castShadow receiveShadow>
           <boxGeometry args={[hx * 2, WALL_HEIGHT, t]} />
           <meshStandardMaterial color={wallColor} />
         </mesh>
@@ -80,6 +80,6 @@ export function Corridor() {
           position={[0, hyWall, lenHalf + t / 2]}
         />
       </RigidBody>
-    </Physics>
+    </>
   )
 }
