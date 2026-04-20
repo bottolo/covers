@@ -24,7 +24,6 @@ export function Corridor() {
 
   return (
     <>
-      {/* Floor */}
       <RigidBody type="fixed" colliders={false}>
         <mesh position={[0, -hyFloor, 0]} receiveShadow>
           <boxGeometry args={[hx * 2, FLOOR_THICKNESS, hz * 2]} />
@@ -33,7 +32,6 @@ export function Corridor() {
         <CuboidCollider args={[hx, hyFloor, hz]} position={[0, -hyFloor, 0]} />
       </RigidBody>
 
-      {/* Left wall (-X) */}
       <RigidBody type="fixed" colliders={false}>
         <mesh position={[-innerHalf - t / 2, hyWall, 0]} castShadow receiveShadow>
           <boxGeometry args={[t, WALL_HEIGHT, hz * 2]} />
@@ -45,7 +43,6 @@ export function Corridor() {
         />
       </RigidBody>
 
-      {/* Right wall (+X) */}
       <RigidBody type="fixed" colliders={false}>
         <mesh position={[innerHalf + t / 2, hyWall, 0]} castShadow receiveShadow>
           <boxGeometry args={[t, WALL_HEIGHT, hz * 2]} />
@@ -57,7 +54,6 @@ export function Corridor() {
         />
       </RigidBody>
 
-      {/* Back wall (-Z) */}
       <RigidBody type="fixed" colliders={false}>
         <mesh position={[0, hyWall, -lenHalf - t / 2]} castShadow receiveShadow>
           <boxGeometry args={[hx * 2, WALL_HEIGHT, t]} />
@@ -69,7 +65,6 @@ export function Corridor() {
         />
       </RigidBody>
 
-      {/* Front wall (+Z) */}
       <RigidBody type="fixed" colliders={false}>
         <mesh position={[0, hyWall, lenHalf + t / 2]} castShadow receiveShadow>
           <boxGeometry args={[hx * 2, WALL_HEIGHT, t]} />
