@@ -6,7 +6,7 @@ import { FirstPersonPlayer } from './player/FirstPersonPlayer'
 
 export function Game() {
   return (
-    <Canvas shadows gl={{ antialias: true }}>
+    <Canvas className="h-full w-full touch-none" shadows gl={{ antialias: true }}>
       <Suspense fallback={null}>
         <Physics gravity={[0, -9.81, 0]}>
           <ambientLight intensity={0.35} />
