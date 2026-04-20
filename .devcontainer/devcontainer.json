@@ -1,0 +1,86 @@
+{
+    "name": "Covers",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    // Pass through your host user so bind-mounted files keep correct ownership
+    "remoteUser": "bun",
+    "features": {
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "installZsh": true,
+            "configureZshAsDefaultShell": true,
+            "username": "bun"
+        },
+        "ghcr.io/devcontainers/features/git:1": {},
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    },
+    // Vite dev server + Triplex scene preview
+    "forwardPorts": [
+        5173,
+        5174,
+        8000
+    ],
+    "portsAttributes": {
+        "5173": {
+            "label": "Vite Dev",
+            "onAutoForward": "openBrowser"
+        },
+        "5174": {
+            "label": "Vite HMR (fallback)"
+        },
+        "8000": {
+            "label": "Triplex"
+        }
+    },
+    "postCreateCommand": "bun install",
+    "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                // Triplex — visual editor for R3F (edits your .tsx in place)
+                "trytriplex.triplex-vsce",
+                // Bun runtime & debugger
+                "oven.bun-vscode",
+                // React / TS / linting
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode",
+                "ms-vscode.vscode-typescript-next",
+                // Quality-of-life for 3D / shaders / GLTF
+                "slevesque.shader",
+                "cesium.gltf-vscode",
+                // GitHub integration
+                "github.vscode-pull-request-github",
+                "eamodio.gitlens",
+                // Tailwind/CSS autocompletion if you add it later
+                "bradlc.vscode-tailwindcss"
+            ],
+            "settings": {
+                "editor.formatOnSave": true,
+                "editor.defaultFormatter": "esbenp.prettier-vscode",
+                "eslint.validate": [
+                    "javascript",
+                    "javascriptreact",
+                    "typescript",
+                    "typescriptreact"
+                ],
+                "typescript.tsdk": "node_modules/typescript/lib",
+                "bun.runtime": "/usr/local/bin/bun",
+                "terminal.integrated.defaultProfile.linux": "zsh",
+                "files.watcherExclude": {
+                    "**/node_modules/**": true,
+                    "**/.git/objects/**": true,
+                    "**/dist/**": true
+                }
+            }
+        }
+    },
+    // Keeps node_modules inside the container (faster on macOS) while
+    // the rest of the repo is a normal bind mount.
+    "mounts": [
+        "source=covers-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume"
+    ],
+    "containerEnv": {
+        "BUN_INSTALL": "/home/bun/.bun",
+        "NODE_ENV": "development"
+    }
+}
