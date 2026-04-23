@@ -1,4 +1,4 @@
-import { Html, Image, Text } from '@react-three/drei'
+import { Text, useTexture } from '@react-three/drei'
 import { DoubleSide } from 'three'
 import type { Album } from '../../types/albums'
 import {
@@ -17,6 +17,7 @@ export function Portrait({ album, position, rotation }: PortraitProps) {
   const artistsText = album.artists.join(', ')
   const yearText = album.year ?? 'Unknown year'
   const proxiedCoverUrl = `/api/cover?url=${encodeURIComponent(album.coverUrl)}`
+  const coverTexture = useTexture(proxiedCoverUrl)
   const linkEntries = Object.entries(album.urls).filter(
     (entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1].length > 0
   )
@@ -28,11 +29,15 @@ export function Portrait({ album, position, rotation }: PortraitProps) {
         <meshStandardMaterial color="#121212" roughness={0.9} side={DoubleSide} />
       </mesh>
 
-      <Image
-        url={proxiedCoverUrl}
-        toneMapped={false}
-        scale={[PORTRAIT_WIDTH, PORTRAIT_HEIGHT]}
-      />
+      <mesh receiveShadow castShadow>
+        <planeGeometry args={[PORTRAIT_WIDTH, PORTRAIT_HEIGHT]} />
+        <meshStandardMaterial
+          map={coverTexture}
+          side={DoubleSide}
+          roughness={0.85}
+          metalness={0}
+        />
+      </mesh>
 
       <Text
         color="#f5f5f5"
@@ -65,31 +70,27 @@ export function Portrait({ album, position, rotation }: PortraitProps) {
         {String(yearText)}
       </Text>
 
-      {linkEntries.length > 0 && (
-        <Html
-          transform
-          center
-          distanceFactor={9}
-          position={[0, -PORTRAIT_HEIGHT / 2 - 0.5, 0.03]}
+      {linkEntries.slice(0, 2).map(([label, href], index) => (
+        <Text
+          key={`${label}-${href}`}
+          color="#7dd3fc"
+          anchorX="center"
+          anchorY="top"
+          maxWidth={PORTRAIT_WIDTH + 0.2}
+          fontSize={0.09}
+          position={[
+            0,
+            -PORTRAIT_HEIGHT / 2 - 0.1 - PORTRAIT_TEXT_LINE_HEIGHT * (3 + index),
+            0.02,
+          ]}
+          onPointerDown={(event) => {
+            event.stopPropagation()
+            window.open(href, '_blank', 'noopener,noreferrer')
+          }}
         >
-          <div className="pointer-events-auto min-w-[120px] rounded bg-black/65 px-2 py-1 text-center text-[10px] text-white">
-            <div className="mb-0.5 text-[10px] font-semibold text-neutral-100">Links</div>
-            <div className="flex flex-wrap items-center justify-center gap-1">
-              {linkEntries.map(([label, href]) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded border border-white/20 px-1.5 py-0.5 text-[9px] text-sky-300 hover:bg-white/10"
-                >
-                  {label}
-                </a>
-              ))}
-            </div>
-          </div>
-        </Html>
-      )}
+          {label}
+        </Text>
+      ))}
     </group>
   )
 }
