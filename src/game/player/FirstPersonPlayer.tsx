@@ -8,6 +8,7 @@ import {
 import { useEffect, useMemo, useRef } from 'react'
 import { Group, Vector3 } from 'three'
 import {
+  chunkIndexFromZ,
   MOVE_SPEED,
   PLAYER_CAPSULE_HALF_HEIGHT,
   PLAYER_INITIAL_YAW,
@@ -21,9 +22,14 @@ const _move = new Vector3()
 const _forward = new Vector3()
 const _right = new Vector3()
 
-export function FirstPersonPlayer() {
+type FirstPersonPlayerProps = {
+  onChunkIndexChange?: (chunkIndex: number) => void
+}
+
+export function FirstPersonPlayer({ onChunkIndexChange }: FirstPersonPlayerProps) {
   const body = useRef<RapierRigidBody>(null)
   const look = useRef<Group>(null)
+  const lastChunkIndex = useRef<number | null>(null)
   const { gl } = useThree()
   const { yaw, pitch, keys, pointerLocked } = useFirstPersonControls(
     PLAYER_INITIAL_YAW
@@ -45,6 +51,13 @@ export function FirstPersonPlayer() {
     const rb = body.current
     const head = look.current
     if (!rb) return
+
+    const z = rb.translation().z
+    const currentChunk = chunkIndexFromZ(z)
+    if (lastChunkIndex.current !== currentChunk) {
+      lastChunkIndex.current = currentChunk
+      onChunkIndexChange?.(currentChunk)
+    }
 
     if (head) {
       head.rotation.order = 'YXZ'
