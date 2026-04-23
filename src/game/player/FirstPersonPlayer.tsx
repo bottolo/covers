@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { Group, Vector3 } from 'three'
 import {
   chunkIndexFromZ,
+  MAX_PITCH,
   MOVE_SPEED,
   PLAYER_CAPSULE_HALF_HEIGHT,
   PLAYER_INITIAL_YAW,
@@ -31,6 +32,12 @@ export function FirstPersonPlayer({ onChunkIndexChange }: FirstPersonPlayerProps
   const look = useRef<Group>(null)
   const lastChunkIndex = useRef<number | null>(null)
   const touchForward = useRef(false)
+  const activeTouchId = useRef<number | null>(null)
+  const touchLastX = useRef(0)
+  const touchLastY = useRef(0)
+  const touchStartX = useRef(0)
+  const touchStartY = useRef(0)
+  const longPressTimer = useRef<number | null>(null)
   const { gl } = useThree()
   const { yaw, pitch, keys, pointerLocked } = useFirstPersonControls(
     PLAYER_INITIAL_YAW
@@ -41,26 +48,94 @@ export function FirstPersonPlayer({ onChunkIndexChange }: FirstPersonPlayerProps
 
   useEffect(() => {
     const canvas = gl.domElement
+    const TOUCH_LONG_PRESS_MS = 280
+    const TOUCH_MOVE_CANCEL_PX = 12
+    const TOUCH_LOOK_SENSITIVITY = 0.0032
+
+    const clearLongPressTimer = () => {
+      if (longPressTimer.current !== null) {
+        window.clearTimeout(longPressTimer.current)
+        longPressTimer.current = null
+      }
+    }
+
+    const findTouchById = (touches: TouchList, id: number) => {
+      for (let index = 0; index < touches.length; index += 1) {
+        const touch = touches.item(index)
+        if (touch?.identifier === id) return touch
+      }
+      return null
+    }
+
     const onClick = () => {
       canvas.requestPointerLock()
     }
-    const onTouchStart = () => {
-      touchForward.current = true
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (activeTouchId.current !== null) return
+      const touch = event.changedTouches.item(0)
+      if (!touch) return
+
+      activeTouchId.current = touch.identifier
+      touchStartX.current = touch.clientX
+      touchStartY.current = touch.clientY
+      touchLastX.current = touch.clientX
+      touchLastY.current = touch.clientY
+      touchForward.current = false
+
+      clearLongPressTimer()
+      longPressTimer.current = window.setTimeout(() => {
+        touchForward.current = true
+      }, TOUCH_LONG_PRESS_MS)
     }
-    const onTouchEnd = () => {
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (activeTouchId.current === null) return
+      const touch = findTouchById(event.touches, activeTouchId.current)
+      if (!touch) return
+
+      const deltaX = touch.clientX - touchLastX.current
+      const deltaY = touch.clientY - touchLastY.current
+      touchLastX.current = touch.clientX
+      touchLastY.current = touch.clientY
+
+      yaw.current -= deltaX * TOUCH_LOOK_SENSITIVITY
+      pitch.current -= deltaY * TOUCH_LOOK_SENSITIVITY
+      pitch.current = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, pitch.current))
+
+      const movedDistanceX = touch.clientX - touchStartX.current
+      const movedDistanceY = touch.clientY - touchStartY.current
+      const movedDistance = Math.hypot(movedDistanceX, movedDistanceY)
+      if (movedDistance > TOUCH_MOVE_CANCEL_PX && !touchForward.current) {
+        clearLongPressTimer()
+      }
+
+      event.preventDefault()
+    }
+
+    const onTouchEndOrCancel = (event: TouchEvent) => {
+      if (activeTouchId.current === null) return
+      const ended = findTouchById(event.changedTouches, activeTouchId.current)
+      if (!ended) return
+
+      clearLongPressTimer()
+      activeTouchId.current = null
       touchForward.current = false
     }
 
     canvas.addEventListener('click', onClick)
     canvas.addEventListener('touchstart', onTouchStart, { passive: true })
-    canvas.addEventListener('touchend', onTouchEnd, { passive: true })
-    canvas.addEventListener('touchcancel', onTouchEnd, { passive: true })
+    canvas.addEventListener('touchmove', onTouchMove, { passive: false })
+    canvas.addEventListener('touchend', onTouchEndOrCancel, { passive: true })
+    canvas.addEventListener('touchcancel', onTouchEndOrCancel, { passive: true })
 
     return () => {
+      clearLongPressTimer()
       canvas.removeEventListener('click', onClick)
       canvas.removeEventListener('touchstart', onTouchStart)
-      canvas.removeEventListener('touchend', onTouchEnd)
-      canvas.removeEventListener('touchcancel', onTouchEnd)
+      canvas.removeEventListener('touchmove', onTouchMove)
+      canvas.removeEventListener('touchend', onTouchEndOrCancel)
+      canvas.removeEventListener('touchcancel', onTouchEndOrCancel)
     }
   }, [gl])
 
