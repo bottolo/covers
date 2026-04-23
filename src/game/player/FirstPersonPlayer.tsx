@@ -30,6 +30,7 @@ export function FirstPersonPlayer({ onChunkIndexChange }: FirstPersonPlayerProps
   const body = useRef<RapierRigidBody>(null)
   const look = useRef<Group>(null)
   const lastChunkIndex = useRef<number | null>(null)
+  const touchForward = useRef(false)
   const { gl } = useThree()
   const { yaw, pitch, keys, pointerLocked } = useFirstPersonControls(
     PLAYER_INITIAL_YAW
@@ -43,8 +44,24 @@ export function FirstPersonPlayer({ onChunkIndexChange }: FirstPersonPlayerProps
     const onClick = () => {
       canvas.requestPointerLock()
     }
+    const onTouchStart = () => {
+      touchForward.current = true
+    }
+    const onTouchEnd = () => {
+      touchForward.current = false
+    }
+
     canvas.addEventListener('click', onClick)
-    return () => canvas.removeEventListener('click', onClick)
+    canvas.addEventListener('touchstart', onTouchStart, { passive: true })
+    canvas.addEventListener('touchend', onTouchEnd, { passive: true })
+    canvas.addEventListener('touchcancel', onTouchEnd, { passive: true })
+
+    return () => {
+      canvas.removeEventListener('click', onClick)
+      canvas.removeEventListener('touchstart', onTouchStart)
+      canvas.removeEventListener('touchend', onTouchEnd)
+      canvas.removeEventListener('touchcancel', onTouchEnd)
+    }
   }, [gl])
 
   useFrame(() => {
@@ -79,8 +96,9 @@ export function FirstPersonPlayer({ onChunkIndexChange }: FirstPersonPlayerProps
     if (k.back) _move.sub(_forward)
     if (k.left) _move.sub(_right)
     if (k.right) _move.add(_right)
+    if (touchForward.current) _move.add(_forward)
 
-    const horizontal = pointerLocked.current
+    const horizontal = pointerLocked.current || touchForward.current
     if (_move.lengthSq() > 1e-8) {
       _move.normalize().multiplyScalar(MOVE_SPEED)
     } else {
