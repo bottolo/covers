@@ -1,6 +1,7 @@
 import { Canvas } from '@react-three/fiber'
 import { Suspense, useState } from 'react'
 import { Physics } from '@react-three/rapier'
+import { PCFShadowMap } from 'three'
 import { CorridorWorld } from './environment/CorridorWorld'
 import { FirstPersonPlayer } from './player/FirstPersonPlayer'
 
@@ -8,7 +9,11 @@ export function Game() {
   const [currentChunkIndex, setCurrentChunkIndex] = useState(0)
 
   return (
-    <Canvas className="h-full w-full touch-none" shadows gl={{ antialias: true }}>
+    <Canvas
+      className="h-full w-full touch-none"
+      shadows={{ type: PCFShadowMap }}
+      gl={{ antialias: true }}
+    >
       <fog attach="fog" args={['#ffffff', 8, 24]} />
       <ambientLight intensity={0.35} />
       <directionalLight

@@ -4,7 +4,7 @@ import { useAlbumsQuery } from '../api/albums'
 const initialLimit = 20
 
 export function AlbumsDebugBox() {
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(true)
   const { data, isLoading, isError, error, refetch, isFetching } = useAlbumsQuery({
     limit: initialLimit,
     cursor: null,
@@ -12,7 +12,7 @@ export function AlbumsDebugBox() {
 
   if (isCollapsed) {
     return (
-      <aside className="absolute left-4 top-4 z-20">
+      <aside className="absolute left-4 top-16 z-20">
         <button
           type="button"
           onClick={() => setIsCollapsed(false)}
@@ -26,7 +26,7 @@ export function AlbumsDebugBox() {
   }
 
   return (
-    <aside className="absolute left-4 top-4 z-20 w-[min(92vw,520px)]">
+    <aside className="absolute left-4 top-16 z-20 w-[min(92vw,520px)]">
       <div className="rounded-lg border border-neutral-200 bg-white/90 p-2 text-sm text-neutral-900 shadow-lg backdrop-blur-sm dark:border-neutral-700 dark:bg-neutral-900/80 dark:text-neutral-100">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">Albums</h2>
