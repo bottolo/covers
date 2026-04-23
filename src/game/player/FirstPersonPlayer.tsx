@@ -137,7 +137,7 @@ export function FirstPersonPlayer({ onChunkIndexChange }: FirstPersonPlayerProps
       canvas.removeEventListener('touchend', onTouchEndOrCancel)
       canvas.removeEventListener('touchcancel', onTouchEndOrCancel)
     }
-  }, [gl])
+  }, [gl, pitch, yaw])
 
   useFrame(() => {
     const rb = body.current
