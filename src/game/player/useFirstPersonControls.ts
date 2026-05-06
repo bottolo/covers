@@ -6,6 +6,9 @@ export type FirstPersonKeys = {
   back: boolean
   left: boolean
   right: boolean
+  run: boolean
+  crouch: boolean
+  jump: boolean
 }
 
 export function useFirstPersonControls(initialYaw: number) {
@@ -16,6 +19,9 @@ export function useFirstPersonControls(initialYaw: number) {
     back: false,
     left: false,
     right: false,
+    run: false,
+    crouch: false,
+    jump: false,
   })
   const pointerLocked = useRef(false)
 
@@ -39,6 +45,19 @@ export function useFirstPersonControls(initialYaw: number) {
         case 'ArrowRight':
           keys.current.right = true
           break
+        case 'ShiftLeft':
+        case 'ShiftRight':
+          keys.current.run = true
+          break
+        case 'ControlLeft':
+        case 'ControlRight':
+        case 'KeyC':
+          keys.current.crouch = true
+          break
+        case 'Space':
+          keys.current.jump = true
+          e.preventDefault()
+          break
         default:
           break
       }
@@ -61,6 +80,19 @@ export function useFirstPersonControls(initialYaw: number) {
         case 'KeyD':
         case 'ArrowRight':
           keys.current.right = false
+          break
+        case 'ShiftLeft':
+        case 'ShiftRight':
+          keys.current.run = false
+          break
+        case 'ControlLeft':
+        case 'ControlRight':
+        case 'KeyC':
+          keys.current.crouch = false
+          break
+        case 'Space':
+          keys.current.jump = false
+          e.preventDefault()
           break
         default:
           break

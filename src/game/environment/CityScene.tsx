@@ -1,4 +1,5 @@
 import { useGLTF } from '@react-three/drei'
+import { RigidBody } from '@react-three/rapier'
 import { useLayoutEffect } from 'react'
 import { Group, Mesh } from 'three'
 import { CITY_Y_OFFSET } from '../config'
@@ -18,9 +19,8 @@ export function CityScene() {
   }, [scene])
 
   return (
-    <primitive
-      object={scene}
-      position={[0, CITY_Y_OFFSET, 0]}
-    />
+    <RigidBody type="fixed" colliders="trimesh" position={[0, CITY_Y_OFFSET, 0]}>
+      <primitive object={scene} />
+    </RigidBody>
   )
 }
