@@ -1,36 +1,27 @@
 import { PerspectiveCamera } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
-import {
-  CapsuleCollider,
-  RapierRigidBody,
-  RigidBody,
-} from '@react-three/rapier'
 import { useEffect, useMemo, useRef } from 'react'
 import { Group, Vector3 } from 'three'
 import {
-  chunkIndexFromZ,
   MAX_PITCH,
   MOVE_SPEED,
   PLAYER_CAPSULE_HALF_HEIGHT,
+  PLAYER_EYE_HEIGHT,
   PLAYER_INITIAL_YAW,
   PLAYER_RADIUS,
-  playerCameraLocalY,
-  playerSpawnPosition,
+  CITY_STREET_EXTENT,
 } from '../config'
+import { getCityAlbumPoints } from '../environment/cityAlbumDebug'
 import { useFirstPersonControls } from './useFirstPersonControls'
 
-const _move = new Vector3()
 const _forward = new Vector3()
 const _right = new Vector3()
+const _move = new Vector3()
 
-type FirstPersonPlayerProps = {
-  onChunkIndexChange?: (chunkIndex: number) => void
-}
-
-export function FirstPersonPlayer({ onChunkIndexChange }: FirstPersonPlayerProps) {
-  const body = useRef<RapierRigidBody>(null)
+export function FirstPersonPlayer() {
+  const body = useRef<Group>(null)
   const look = useRef<Group>(null)
-  const lastChunkIndex = useRef<number | null>(null)
+  const positionRef = useRef(new Vector3(0, PLAYER_EYE_HEIGHT, 0))
   const touchForward = useRef(false)
   const activeTouchId = useRef<number | null>(null)
   const touchLastX = useRef(0)
@@ -38,13 +29,35 @@ export function FirstPersonPlayer({ onChunkIndexChange }: FirstPersonPlayerProps
   const touchStartX = useRef(0)
   const touchStartY = useRef(0)
   const longPressTimer = useRef<number | null>(null)
+  const debugCycleIndexRef = useRef(-1)
   const { gl } = useThree()
-  const { yaw, pitch, keys, pointerLocked } = useFirstPersonControls(
-    PLAYER_INITIAL_YAW
+  const { yaw, pitch, keys } = useFirstPersonControls(PLAYER_INITIAL_YAW)
+
+  const bodyOffsetY = useMemo(
+    () => PLAYER_EYE_HEIGHT - (PLAYER_CAPSULE_HALF_HEIGHT + PLAYER_RADIUS),
+    []
   )
 
-  const spawn = useMemo(() => playerSpawnPosition(), [])
-  const cameraLocalY = useMemo(() => playerCameraLocalY(), [])
+  useEffect(() => {
+    const initialX = (Math.random() * 2 - 1) * CITY_STREET_EXTENT
+    const initialZ = (Math.random() * 2 - 1) * CITY_STREET_EXTENT
+    positionRef.current.set(initialX, PLAYER_EYE_HEIGHT, initialZ)
+  }, [])
+
+  useEffect(() => {
+    const onDebugTeleport = (event: KeyboardEvent) => {
+      if (event.code !== 'KeyR') return
+      const points = getCityAlbumPoints()
+      if (points.length === 0) return
+      debugCycleIndexRef.current =
+        (debugCycleIndexRef.current + 1) % points.length
+      const [x, y, z] = points[debugCycleIndexRef.current]
+      positionRef.current.set(x, Math.max(PLAYER_EYE_HEIGHT, y), z)
+    }
+
+    window.addEventListener('keydown', onDebugTeleport)
+    return () => window.removeEventListener('keydown', onDebugTeleport)
+  }, [])
 
   useEffect(() => {
     const canvas = gl.domElement
@@ -139,17 +152,28 @@ export function FirstPersonPlayer({ onChunkIndexChange }: FirstPersonPlayerProps
     }
   }, [gl, pitch, yaw])
 
-  useFrame(() => {
-    const rb = body.current
+  useFrame((_, delta) => {
+    const root = body.current
     const head = look.current
-    if (!rb) return
+    if (!root) return
 
-    const z = rb.translation().z
-    const currentChunk = chunkIndexFromZ(z)
-    if (lastChunkIndex.current !== currentChunk) {
-      lastChunkIndex.current = currentChunk
-      onChunkIndexChange?.(currentChunk)
+    const k = keys.current
+    _forward.set(-Math.sin(yaw.current), 0, -Math.cos(yaw.current))
+    _right.set(Math.cos(yaw.current), 0, -Math.sin(yaw.current))
+
+    _move.set(0, 0, 0)
+    if (k.forward || touchForward.current) _move.add(_forward)
+    if (k.back) _move.sub(_forward)
+    if (k.left) _move.sub(_right)
+    if (k.right) _move.add(_right)
+
+    if (_move.lengthSq() > 1e-8) {
+      _move.normalize().multiplyScalar(MOVE_SPEED * delta)
+      positionRef.current.add(_move)
     }
+    positionRef.current.y = PLAYER_EYE_HEIGHT
+
+    root.position.copy(positionRef.current)
 
     if (head) {
       head.rotation.order = 'YXZ'
@@ -157,61 +181,26 @@ export function FirstPersonPlayer({ onChunkIndexChange }: FirstPersonPlayerProps
       head.rotation.x = pitch.current
       head.rotation.z = 0
     }
-
-    _forward.set(
-      -Math.sin(yaw.current),
-      0,
-      -Math.cos(yaw.current),
-    )
-    _right.set(Math.cos(yaw.current), 0, -Math.sin(yaw.current))
-
-    const k = keys.current
-    _move.set(0, 0, 0)
-    if (k.forward) _move.add(_forward)
-    if (k.back) _move.sub(_forward)
-    if (k.left) _move.sub(_right)
-    if (k.right) _move.add(_right)
-    if (touchForward.current) _move.add(_forward)
-
-    const horizontal = pointerLocked.current || touchForward.current
-    if (_move.lengthSq() > 1e-8) {
-      _move.normalize().multiplyScalar(MOVE_SPEED)
-    } else {
-      _move.set(0, 0, 0)
-    }
-
-    const lv = rb.linvel()
-    if (horizontal) {
-      rb.setLinvel({ x: _move.x, y: lv.y, z: _move.z }, true)
-    } else {
-      rb.setLinvel({ x: 0, y: lv.y, z: 0 }, true)
-    }
   })
 
   const cylLen = PLAYER_CAPSULE_HALF_HEIGHT * 2
 
   return (
-    <RigidBody
-      ref={body}
-      position={spawn}
-      colliders={false}
-      enabledRotations={[false, false, false]}
-      linearDamping={2.5}
-      friction={1}
-    >
-      <CapsuleCollider
-        args={[PLAYER_CAPSULE_HALF_HEIGHT, PLAYER_RADIUS]}
-      />
-      <mesh castShadow receiveShadow>
+    <group ref={body} position={[0, PLAYER_EYE_HEIGHT, 0]}>
+      <mesh
+        castShadow
+        receiveShadow
+        position={[0, bodyOffsetY, 0]}
+      >
         <capsuleGeometry args={[PLAYER_RADIUS, cylLen, 6, 12]} />
         <meshStandardMaterial color="#c4b8a8" roughness={0.8} />
       </mesh>
 
-      <group position={[0, cameraLocalY, 0]}>
+      <group position={[0, 0, 0]}>
         <group ref={look}>
-          <PerspectiveCamera makeDefault fov={75} near={0.06} far={200} />
+          <PerspectiveCamera makeDefault fov={75} near={0.06} far={1500} />
         </group>
       </group>
-    </RigidBody>
+    </group>
   )
 }

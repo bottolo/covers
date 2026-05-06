@@ -1,32 +1,31 @@
+import { Sky } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
-import { Suspense, useState } from 'react'
-import { Physics } from '@react-three/rapier'
+import { Suspense } from 'react'
 import { PCFShadowMap } from 'three'
-import { CorridorWorld } from './environment/CorridorWorld'
+import { CityAlbumsWorld } from './environment/CityAlbumsWorld'
+import { CityScene } from './environment/CityScene'
 import { FirstPersonPlayer } from './player/FirstPersonPlayer'
 
 export function Game() {
-  const [currentChunkIndex, setCurrentChunkIndex] = useState(0)
-
   return (
     <Canvas
       className="h-full w-full touch-none"
       shadows={{ type: PCFShadowMap }}
       gl={{ antialias: true }}
     >
-      <fog attach="fog" args={['#ffffff', 8, 24]} />
-      <ambientLight intensity={0.35} />
+      <fog attach="fog" args={['#9bb8d6', 80, 600]} />
+      <Sky sunPosition={[120, 40, 120]} turbidity={4} rayleigh={0.6} />
+      <ambientLight intensity={0.45} />
       <directionalLight
         castShadow
-        intensity={1.25}
-        position={[8, 14, 6]}
+        intensity={1.35}
+        position={[14, 28, 10]}
         shadow-mapSize={[2048, 2048]}
       />
       <Suspense fallback={null}>
-        <Physics gravity={[0, -9.81, 0]}>
-          <CorridorWorld currentChunkIndex={currentChunkIndex} />
-          <FirstPersonPlayer onChunkIndexChange={setCurrentChunkIndex} />
-        </Physics>
+        <CityScene />
+        <CityAlbumsWorld />
+        <FirstPersonPlayer />
       </Suspense>
     </Canvas>
   )
