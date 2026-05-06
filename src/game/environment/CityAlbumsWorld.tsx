@@ -1,3 +1,4 @@
+import { Billboard } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useRapier } from '@react-three/rapier'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -11,6 +12,7 @@ import {
   CITY_ALBUM_FLOAT_AMPLITUDE,
   CITY_ALBUM_FLOAT_SPEED,
   CITY_ALBUM_MIN_ROOF_Y,
+  CITY_ALBUM_ROOF_OFFSET,
   CITY_STREET_EXTENT,
 } from '../config'
 import { setCityAlbumPoints } from './cityAlbumDebug'
@@ -22,6 +24,7 @@ type Placement = {
   rotationY: number
 }
 const ROOF_RAY_ORIGIN_Y = 260
+export type AlbumWorldPoint = [number, number, number]
 
 function mulberry32(seed: number): () => number {
   let value = seed
@@ -50,7 +53,7 @@ function createRoofPlacement(
   const surfaceY = ROOF_RAY_ORIGIN_Y - hit.timeOfImpact
   if (surfaceY < CITY_ALBUM_MIN_ROOF_Y) return null
   return {
-    position: [x, Math.max(CITY_ALBUM_BASE_Y, surfaceY + 0.9), z],
+    position: [x, Math.max(CITY_ALBUM_BASE_Y, surfaceY + CITY_ALBUM_ROOF_OFFSET), z],
     phase: random() * Math.PI * 2,
     rotationY: random() * Math.PI * 2,
   }
@@ -82,15 +85,22 @@ function FloatingPortrait({
       position={[baseX, baseY, baseZ]}
       rotation={[0, placement.rotationY, 0]}
     >
-      <Portrait album={album} position={[0, 0, 0]} rotation={[0, 0, 0]} />
+      <Billboard follow lockX lockZ>
+        <Portrait album={album} position={[0, 0, 0]} rotation={[0, 0, 0]} />
+      </Billboard>
     </group>
   )
 }
 
-export function CityAlbumsWorld() {
+type CityAlbumsWorldProps = {
+  onPointsChange?: (points: AlbumWorldPoint[]) => void
+}
+
+export function CityAlbumsWorld({ onPointsChange }: CityAlbumsWorldProps) {
   const { world, rapier } = useRapier()
   const { data: allAlbums } = useAllAlbumsQuery(ALBUM_PREFETCH_BUFFER + ALBUMS_PER_CITY)
-  const [seed] = useState(() => Math.floor(Math.random() * 1_000_000_000))
+  const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1_000_000_000))
+  const regenerationAttemptsRef = useRef(0)
 
   const placements = useMemo(() => {
     const random = mulberry32(seed)
@@ -128,8 +138,41 @@ export function CityAlbumsWorld() {
     const points = placements
       .slice(0, visibleAlbums.length)
       .map((entry) => entry.position)
+
+    const roundedKey = (p: [number, number, number]) =>
+      `${Math.round(p[0])}:${Math.round(p[1])}:${Math.round(p[2])}`
+    const uniquePointCount = new Set(points.map(roundedKey)).size
+
+    let probeRoofHits = 0
+    const probeCount = 40
+    for (let i = 0; i < probeCount; i += 1) {
+      const x = (Math.random() * 2 - 1) * CITY_STREET_EXTENT
+      const z = (Math.random() * 2 - 1) * CITY_STREET_EXTENT
+      const ray = new rapier.Ray(
+        { x, y: ROOF_RAY_ORIGIN_Y, z },
+        { x: 0, y: -1, z: 0 }
+      )
+      const hit = world.castRay(ray, ROOF_RAY_ORIGIN_Y + 80, true)
+      if (!hit) continue
+      const surfaceY = ROOF_RAY_ORIGIN_Y - hit.timeOfImpact
+      if (surfaceY >= CITY_ALBUM_MIN_ROOF_Y) probeRoofHits += 1
+    }
+
+    if (
+      visibleAlbums.length > 0 &&
+      uniquePointCount <= 1 &&
+      probeRoofHits > 0 &&
+      regenerationAttemptsRef.current < 8
+    ) {
+      regenerationAttemptsRef.current += 1
+      setSeed((prev) => prev + 1)
+    } else if (uniquePointCount > 1) {
+      regenerationAttemptsRef.current = 0
+    }
+
     setCityAlbumPoints(points)
-  }, [placements, visibleAlbums.length])
+    onPointsChange?.(points)
+  }, [onPointsChange, placements, rapier, visibleAlbums.length, world])
 
   return (
     <>

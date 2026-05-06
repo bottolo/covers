@@ -24,6 +24,9 @@ export const AIR_ACCEL = 7.5
 export const AIR_STRAFE_FACTOR = 0.25
 export const JUMP_CHARGE_MAX_MS = 850
 export const CHARGED_JUMP_SPEED = 95
+export const NOCLIP_BASE_SPEED = 28
+export const NOCLIP_BOOST_MULTIPLIER = 2.6
+export const NOCLIP_VERTICAL_SPEED = 18
 
 /** City backdrop and album placement constants. */
 export const CITY_Y_OFFSET = 0
@@ -34,6 +37,7 @@ export const CITY_ALBUM_BASE_Y = 3.8
 export const CITY_ALBUM_FLOAT_AMPLITUDE = 0.45
 export const CITY_ALBUM_FLOAT_SPEED = 0.9
 export const CITY_ALBUM_MIN_ROOF_Y = 7
+export const CITY_ALBUM_ROOF_OFFSET = 3.4
 
 export const PORTRAIT_WIDTH = 1.8
 export const PORTRAIT_HEIGHT = 1.8
